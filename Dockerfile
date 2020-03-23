@@ -1,44 +1,52 @@
-FROM elixir:1.10-alpine as build
+FROM elixir:1.10-alpine as asset-builder-mix-getter
 
-ARG APP_NAME=discovery
-ARG PHOENIX_SUBDIR=.
-ENV MIX_ENV=prod
+ENV HOME=/opt/app
+WORKDIR $HOME
 
-RUN mkdir /app
-WORKDIR /app
+RUN mix do local.hex --force, local.rebar --force
 
-# Install nodejs for asset processing.
-RUN apk update \
-  && apk --no-cache --update add nodejs nodejs-npm
-
-RUN mix local.rebar --force \
-  && mix local.hex --force
-
+COPY config/ ./config/
 COPY mix.exs mix.lock ./
-COPY config config
-RUN mix deps.get
-RUN mix deps.compile
 
-# Run the static asset processing pipeline
+RUN mix deps.get
+
+############################################################
+FROM node as asset-builder
+
+ENV HOME=/opt/app
+WORKDIR $HOME
+
+COPY --from=asset-builder-mix-getter $HOME/deps $HOME/deps
+
+WORKDIR $HOME
 COPY assets assets
-COPY priv priv
-RUN cd assets && npm install && npm run deploy
+RUN cd assets \
+    && npm install \
+    && cd ..
+RUN npm run deploy --prefix ./assets
+
+############################################################
+FROM elixir:1.10-alpine
+
+ENV HOME=/opt/app
+WORKDIR $HOME
+
+RUN mix do local.hex --force, local.rebar --force
+
+COPY config/ $HOME/config/
+COPY mix.exs mix.lock $HOME/
+
+COPY lib/ ./lib
+
+COPY priv/ ./priv
+
+ENV MIX_ENV=prod
+ENV PORT=8080
+
+RUN mix do deps.get --only $MIX_ENV, deps.compile, compile
+
+COPY --from=asset-builder $HOME/priv/static/ $HOME/priv/static/
+
 RUN mix phx.digest
 
-COPY lib lib
-RUN mix compile
-
-RUN mix release
-
-FROM alpine:3.9 AS app
-RUN apk add --update bash openssl
-
-RUN mkdir /app
-WORKDIR /app
-
-# Copy just the built artifact to the runnable image
-COPY --from=build /app/_build/prod/rel/discovery ./
-RUN chown -R nobody: /app
-USER nobody
-ENV RUNNER_LOG_DIR /var/log
-CMD ["/app/bin/discovery", "start"]
+CMD ["mix", "phx.server"]

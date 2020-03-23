@@ -4,4 +4,6 @@
 # files from your .gitignore file, remove the corresponding line below:
 .git
 .gitignore
+_build
+assets/node_modules
 !/config/*.secret.exs

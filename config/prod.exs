@@ -11,8 +11,9 @@ use Mix.Config
 # before starting your production server.
 config :discovery, DiscoveryWeb.Endpoint,
   http: [:inet6, port: System.get_env("PORT") || 8080],
-  url: [host: "discovery.in-the-cloud.dev", port: 80],
-  cache_static_manifest: "priv/static/cache_manifest.json"
+  url: [host: "discovery.in-the-cloud.dev", port: 80]
+  #,
+  #cache_static_manifest: "priv/static/cache_manifest.json"
 
 # Do not print debug messages in production
 config :logger, level: :info
