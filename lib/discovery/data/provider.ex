@@ -53,10 +53,10 @@ defmodule Discovery.Data.Provider do
     end
   end
 
-  def resolve(_, %{matching: term, order: order}, _) do
+  defp common_search_filter(items, term, order) do
     d_term = String.downcase(term)
     # Search through matching providers by name.
-    results = Enum.filter(list() ++ Discovery.Data.Type.types(),
+    results = Enum.filter(items,
       fn(x) ->
         String.contains?(String.downcase(x[:name]), d_term)
       end)
@@ -68,11 +68,46 @@ defmodule Discovery.Data.Provider do
         :asc -> results
         :desc -> Enum.reverse(results)
       end
-    IO.puts("Sending back results: #{inspect(results)}")
+    results
+  end
+
+  def resolve_types(_, %{matching: term, order: order}, _) do
+    results = common_search_filter(Discovery.Data.Type.types(), term, order)
+    {:ok, results}
+  end
+  def resolve_types(a, m = %{matching: _term}, b) do
+    resolve_types(a, Map.put(m, :order, :asc), b)
+  end
+  def resolve_types(a, m = %{order: _order}, b) do
+    resolve_types(a, Map.put(m, :term, ""), b)
+  end
+  def resolve_types(_, _, _) do
+    {:ok, Discovery.Data.Type.types()}
+  end
+
+  def resolve_providers(_, %{matching: term, order: order}, _) do
+    results = common_search_filter(list(), term, order)
+    {:ok, results}
+  end
+  def resolve_providers(a, m = %{matching: _term}, b) do
+    resolve_providers(a, Map.put(m, :order, :asc), b)
+  end
+  def resolve_providers(a, m = %{order: _order}, b) do
+    resolve_providers(a, Map.put(m, :term, ""), b)
+  end
+  def resolve_providers(_, _, _) do
+    {:ok, list()}
+  end
+
+  def resolve(_, %{matching: term, order: order}, _) do
+    results = common_search_filter(list() ++ Discovery.Data.Type.types(), term, order)
     {:ok, results}
   end
   def resolve(a, m = %{matching: _term}, b) do
     resolve(a, Map.put(m, :order, :asc), b)
+  end
+  def resolve(a, m = %{order: _order}, b) do
+    resolve(a, Map.put(m, :term, ""), b)
   end
   def resolve(_, _, _) do
     {:ok, list()}

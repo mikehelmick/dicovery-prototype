@@ -7,9 +7,19 @@ defmodule DiscoveryWeb.Schema do
       arg :order, :sort_order
       resolve &Discovery.Data.Provider.resolve/3
     end
+    field :providers, list_of(:provider) do
+      arg :matching, :string
+      arg :order, :sort_order
+      resolve &Discovery.Data.Provider.resolve_providers/3
+    end
     field :provider, :provider do
       arg :name, :string
       resolve &Discovery.Data.Provider.by_name/3
+    end
+    field :types, list_of(:type) do
+      arg :matching, :string
+      arg :order, :sort_order
+      resolve &Discovery.Data.Provider.resolve_types/3
     end
     field :type, :type do
       arg :name, :string
