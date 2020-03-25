@@ -110,5 +110,8 @@ defmodule Discovery.Data.Producer do
       |> Enum.map(fn x -> %{source: x} end)
     {:ok, results}
   end
+  def sources(parent, m = %{}, resolver) do
+    sources(parent, Map.put(m, :source_prefix, ""), resolver)
+  end
 
 end
