@@ -1,5 +1,7 @@
 # Discovery
 
+Running demo at [discovery.in-the-cloud.dev](https://discovery.in-the-cloud.dev)
+
 some example GraphQL queries you can run.
 
 1. General Search
